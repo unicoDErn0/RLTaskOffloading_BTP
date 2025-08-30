@@ -1,88 +1,75 @@
 import argparse
+import yaml
+from typing import Dict, Any
 
 from rltaskoffloading.offloading_ddqn.lstm_ddqn import DDQNTO_number, DDQNTO_trans
 from rltaskoffloading.offloading_ppo.offloading_ppo import DRLTO_number, DRLTO_trans
 
-def train(args):
-    # Here is some global configuration for the datapath
-    graph_paths_train_for_number = ["./rltaskoffloading/offloading_data/offload_random10/random.10.",
-                              "./rltaskoffloading/offloading_data/offload_random15/random.15.",
-                              "./rltaskoffloading/offloading_data/offload_random20/random.20.",
-                              "./rltaskoffloading/offloading_data/offload_random25/random.25.",
-                              "./rltaskoffloading/offloading_data/offload_random30/random.30.",
-                              "./rltaskoffloading/offloading_data/offload_random35/random.35.",
-                              "./rltaskoffloading/offloading_data/offload_random40/random.40.",
-                              "./rltaskoffloading/offloading_data/offload_random45/random.45.",
-                              "./rltaskoffloading/offloading_data/offload_random50/random.50.",
-                              ]
-    graph_paths_test_for_number = ["./rltaskoffloading/offloading_data/offload_random10_test/random.10.",
-                         "./rltaskoffloading/offloading_data/offload_random15_test/random.15.",
-                         "./rltaskoffloading/offloading_data/offload_random20_test/random.20.",
-                         "./rltaskoffloading/offloading_data/offload_random25_test/random.25.",
-                         "./rltaskoffloading/offloading_data/offload_random30_test/random.30.",
-                         "./rltaskoffloading/offloading_data/offload_random35_test/random.35.",
-                         "./rltaskoffloading/offloading_data/offload_random40_test/random.40.",
-                         "./rltaskoffloading/offloading_data/offload_random45_test/random.45.",
-                         "./rltaskoffloading/offloading_data/offload_random50_test/random.50."
-                         ]
+def train(config: Dict[str, Any]):
+    """Main training function driven by a config dictionary."""
+    
+    train_cfg = config.get("training", {})
+    app_cfg = config.get("app", {})
 
-    graph_paths_train_for_trans = ["./rltaskoffloading/offloading_data/offload_random15/random.15."]
-    graph_paths_test_for_trans = ["./rltaskoffloading/offloading_data/offload_random15/random.15."]
+    algo = train_cfg.get("algo")
+    scenario = train_cfg.get("scenario")
+    goal = train_cfg.get("goal")
+    dependency = train_cfg.get("dependency")
+    
+    # Construct the log path from config values
+    logpath = f"{app_cfg.get('log_path')}-{algo}-{scenario}-{goal}-dependency-{dependency}"
+    print(f"Starting training for Algo={algo}, Scenario={scenario}, Goal={goal}")
+    print(f"Logs will be saved to: {logpath}")
 
-    logpath = args.logpath+"-"+args.algo +"-"+args.scenario+"-"+args.goal +"-dependency-" + str(args.dependency)
-    if args.algo == "DDQNTO":
-        if args.scenario == "Number":
-            if args.goal == "LO":
-                DDQNTO_number(lambda_t = 1.0, lambda_e = 0.0, logpath=logpath, encode_dependencies=args.dependency,
-                              train_graph_file_paths = graph_paths_train_for_number,
-                              test_graph_file_paths= graph_paths_test_for_number)
-            elif args.goal == "EE":
-                DDQNTO_number(lambda_t=0.5, lambda_e=0.5, logpath=logpath, encode_dependencies=args.dependency,
-                              train_graph_file_paths=graph_paths_train_for_number,
-                              test_graph_file_paths=graph_paths_test_for_number)
-        if args.scenario == "Trans":
-            if args.goal == "LO":
-                DDQNTO_trans(lambda_t = 1.0, lambda_e = 0.0, logpath=logpath, encode_dependencies=args.dependency,
-                             train_graph_file_paths=graph_paths_train_for_trans,
-                             test_graph_file_paths=graph_paths_test_for_trans,
-                             bandwidths=[3.0, 7.0, 11.0, 15.0, 19.0])
-            elif args.goal == "EE":
-                DDQNTO_trans(lambda_t=0.5, lambda_e=0.5, logpath=logpath, encode_dependencies=args.dependency,
-                             train_graph_file_paths=graph_paths_train_for_trans,
-                             test_graph_file_paths=graph_paths_test_for_trans,
-                             bandwidths=[3.0, 7.0, 11.0, 15.0, 19.0])
-    elif args.algo == "DRLTO":
-        if args.scenario == "Number":
-            if args.goal == "LO":
-                DRLTO_number(lambda_t = 1.0, lambda_e = 0.0, logpath=logpath, encode_dependencies=args.dependency,
-                              train_graph_file_paths = graph_paths_train_for_number,
-                              test_graph_file_paths= graph_paths_test_for_number)
-            elif args.goal == "EE":
-                DRLTO_number(lambda_t=0.5, lambda_e=0.5, logpath=logpath, encode_dependencies=args.dependency,
-                             train_graph_file_paths=graph_paths_train_for_number,
-                             test_graph_file_paths=graph_paths_test_for_number)
-        if args.scenario == "Trans":
-            if args.goal == "LO":
-                DRLTO_trans(lambda_t=1.0, lambda_e=0.0, logpath=logpath, encode_dependencies=args.dependency,
-                             train_graph_file_paths=graph_paths_train_for_trans,
-                             test_graph_file_paths=graph_paths_test_for_trans,
-                             bandwidths=[3.0, 7.0, 11.0, 15.0, 19.0])
-            elif args.goal == "EE":
-                DRLTO_trans(lambda_t=0.5, lambda_e=0.5, logpath=logpath, encode_dependencies=args.dependency,
-                             train_graph_file_paths=graph_paths_train_for_trans,
-                             test_graph_file_paths=graph_paths_test_for_trans,
-                             bandwidths=[3.0, 7.0, 11.0, 15.0, 19.0])
+    # Select the correct training and test graph paths based on the scenario
+    if scenario == "Number":
+        train_paths = train_cfg.get("graph_paths_train_number")
+        test_paths = train_cfg.get("graph_paths_test_number")
+        trainer_function = DDQNTO_number if algo == "DDQNTO" else DRLTO_number
+    elif scenario == "Trans":
+        train_paths = train_cfg.get("graph_paths_train_trans")
+        test_paths = train_cfg.get("graph_paths_test_trans")
+        trainer_function = DDQNTO_trans if algo == "DDQNTO" else DRLTO_trans
     else:
-        raise Exception("No defined algorithm")
+        raise ValueError(f"Invalid scenario specified in config: {scenario}")
+
+    # Set lambda weights based on the goal
+    lambda_t = 1.0 if goal == "LO" else 0.5
+    lambda_e = 0.0 if goal == "LO" else 0.5
+
+    # Prepare arguments for the trainer function
+    trainer_args = {
+        "lambda_t": lambda_t,
+        "lambda_e": lambda_e,
+        "logpath": logpath,
+        "encode_dependencies": dependency,
+        "train_graph_file_paths": train_paths,
+        "test_graph_file_paths": test_paths,
+    }
+    
+    # Add bandwidths argument only for the 'Trans' scenario
+    if scenario == "Trans":
+        trainer_args["bandwidths"] = train_cfg.get("bandwidths")
+
+    # Call the selected trainer function with the prepared arguments
+    trainer_function(**trainer_args)
+    print("\nTraining complete.")
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("--algo", type=str, default="DRLTO", choices=["DDQNTO", "DRLTO"])
-    parser.add_argument("--scenario", type=str, default="Trans", choices=["Number", "Trans"])
-    parser.add_argument("--goal", type=str, default="EE", choices=["EE", "LO"])
-    parser.add_argument("--logpath", type=str, default="./log/Result")
-    parser.add_argument("--dependency", type=bool, default=True)
+    parser = argparse.ArgumentParser(description="Run the DRL model training process.")
+    parser.add_argument(
+        '--config', type=str, default='config.yaml',
+        help="Path to the main configuration file."
+    )
     args = parser.parse_args()
 
-    train(args)
+    # Load configuration from the specified YAML file
+    try:
+        with open(args.config, "r") as f:
+            main_config = yaml.safe_load(f)
+    except FileNotFoundError:
+        print(f"Error: Configuration file not found at '{args.config}'")
+        exit(1)
+        
+    train(main_config)

@@ -1,0 +1,46 @@
+# General application settings
+app:
+  graphs_path: "graphs/"
+  model_path: "models/drl_offloader_model.zip"
+  log_path: "log/Result"
+
+# DRL Offloader configuration
+drl_offloader:
+  # Set to 'FOG' or 'CLOUD' to force a decision, or 'None' to use the DRL model.
+  decision_bias: None 
+  exploration_rate: 0.1
+  max_tasks: 50
+
+# PSO Scheduler configuration
+pso:
+  num_particles: 30
+  num_iterations: 100
+  w: 0.7  # Inertia weight
+  c1: 1.5 # Cognitive coefficient
+  c2: 1.5 # Social coefficient
+  alpha: 0.5 # Balance between monetary_cost (alpha) and makespan (1-alpha)
+
+# Training-specific configuration
+training:
+  # Arguments for the training script
+  algo: "DRLTO"       # DDQNTO or DRLTO
+  scenario: "Trans"   # Number or Trans
+  goal: "EE"          # EE or LO
+  dependency: True
+  bandwidths: [3.0, 7.0, 11.0, 15.0, 19.0]
+  
+  # Datasets for the 'Number' scenario
+  graph_paths_train_number:
+    - "rltaskoffloading/offloading_data/offload_random10/random.10."
+    - "rltaskoffloading/offloading_data/offload_random15/random.15."
+    - "rltaskoffloading/offloading_data/offload_random20/random.20."
+  graph_paths_test_number:
+    - "rltaskoffloading/offloading_data/offload_random10_test/random.10."
+    - "rltaskoffloading/offloading_data/offload_random15_test/random.15."
+    - "rltaskoffloading/offloading_data/offload_random20_test/random.20."
+
+  # Datasets for the 'Trans' scenario
+  graph_paths_train_trans:
+    - "rltaskoffloading/offloading_data/offload_random15/random.15."
+  graph_paths_test_trans:
+    - "rltaskoffloading/offloading_data/offload_random15/random.15."
